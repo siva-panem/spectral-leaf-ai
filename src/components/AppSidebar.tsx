@@ -14,7 +14,14 @@ import {
 import { Logo } from "./Logo";
 import { signOut } from "@/lib/auth";
 
-const NAV = [
+type NavItem = {
+  to: "/app" | "/app/detect" | "/app/history" | "/app/library" | "/app/reports" | "/app/about" | "/app/settings" | "/app/help" | "/app/profile";
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  exact?: boolean;
+};
+
+const NAV: NavItem[] = [
   { to: "/app", icon: LayoutDashboard, label: "Dashboard", exact: true },
   { to: "/app/detect", icon: ScanLine, label: "Detection" },
   { to: "/app/history", icon: History, label: "History" },
@@ -24,7 +31,7 @@ const NAV = [
   { to: "/app/settings", icon: Settings, label: "Settings" },
   { to: "/app/help", icon: HelpCircle, label: "Help" },
   { to: "/app/profile", icon: User, label: "Profile" },
-] as const;
+];
 
 export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
