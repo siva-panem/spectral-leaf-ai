@@ -86,7 +86,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "AI-powered early mango leaf disease detection using machine learning and spectral imaging.",
       },
-      { property: "og:title", content: "MangoGuard AI" },
+      { property: "og:title", content: "MangoGuard AI — Early Mango Disease Detection" },
       {
         property: "og:description",
         content: "Detect mango diseases before they become visible.",
@@ -94,6 +94,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#050B08" },
+      { name: "twitter:title", content: "MangoGuard AI — Early Mango Disease Detection" },
+      { name: "description", content: "AI-powered web app for early mango disease detection using spectral imaging and machine learning." },
+      { property: "og:description", content: "AI-powered web app for early mango disease detection using spectral imaging and machine learning." },
+      { name: "twitter:description", content: "AI-powered web app for early mango disease detection using spectral imaging and machine learning." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/rhgYFfu40XdufeWc9PdgO7TzfU33/social-images/social-1782675281924-Screenshot_2026-06-29_005511.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/rhgYFfu40XdufeWc9PdgO7TzfU33/social-images/social-1782675281924-Screenshot_2026-06-29_005511.webp" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
