@@ -12,11 +12,14 @@ import {
   Leaf,
   Lightbulb,
   RotateCw,
+  Download,
 } from "lucide-react";
 import { ScanAnimation } from "@/components/ScanAnimation";
 import { ConfidenceGauge } from "@/components/ConfidenceGauge";
 import { pickMockDetection, type Disease, type Severity } from "@/lib/diseases";
 import { addHistory } from "@/lib/history";
+import { downloadSingleReport } from "@/lib/pdf";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/detect")({
   ssr: false,
