@@ -78,11 +78,11 @@ function ReportsPage() {
                 </div>
                 <button
                   onClick={() => {
-                    const html = `<html><body style="font-family:system-ui;padding:40px"><h1 style="color:#00C853">${r.diseaseName}</h1><img src="${r.imageDataUrl}" style="max-width:320px;border-radius:12px"/><p>Confidence: ${r.confidence.toFixed(2)}%</p><p>Severity: ${r.severity}</p><p>Medicine: ${r.medicine}</p><p>Date: ${new Date(r.createdAt).toLocaleString()}</p><script>window.print()</script></body></html>`;
-                    const w = window.open("", "_blank");
-                    if (w) {
-                      w.document.write(html);
-                      w.document.close();
+                    try {
+                      downloadSingleReport(r);
+                      toast.success("Report downloaded");
+                    } catch {
+                      toast.error("Could not generate PDF");
                     }
                   }}
                   className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-white/[0.03] py-2 text-xs font-medium text-foreground hover:bg-white/[0.06]"
