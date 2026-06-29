@@ -1,12 +1,39 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { clearHistory } from "@/lib/history";
 
 export const Route = createFileRoute("/app/settings")({
   ssr: false,
   component: SettingsPage,
 });
+
+const LANGUAGES = [
+  { label: "English", code: "en" },
+  { label: "हिन्दी", code: "hi" },
+  { label: "தமிழ்", code: "ta" },
+  { label: "తెలుగు", code: "te" },
+] as const;
+
+const PREF_KEY = "mg_settings";
+
+type Prefs = { dark: boolean; notif: boolean; language: string };
+
+function loadPrefs(): Prefs {
+  if (typeof window === "undefined") return { dark: true, notif: true, language: "en" };
+  try {
+    const raw = localStorage.getItem(PREF_KEY);
+    if (raw) return { dark: true, notif: true, language: "en", ...JSON.parse(raw) };
+  } catch {
+    /* ignore */
+  }
+  return { dark: true, notif: true, language: "en" };
+}
+
+function savePrefs(p: Prefs) {
+  localStorage.setItem(PREF_KEY, JSON.stringify(p));
+}
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -22,9 +49,23 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
 }
 
 function SettingsPage() {
-  const [dark, setDark] = useState(true);
-  const [notif, setNotif] = useState(true);
-  const [lang, setLang] = useState("English");
+  const [prefs, setPrefs] = useState<Prefs>(() => loadPrefs());
+
+  // Apply on mount + whenever prefs change
+  useEffect(() => {
+    savePrefs(prefs);
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = prefs.language;
+      document.documentElement.classList.toggle("dark", prefs.dark);
+    }
+  }, [prefs]);
+
+  const update = <K extends keyof Prefs>(key: K, value: Prefs[K], label: string) => {
+    setPrefs((p) => ({ ...p, [key]: value }));
+    toast.success(label);
+  };
+
+  const currentLang = LANGUAGES.find((l) => l.code === prefs.language) ?? LANGUAGES[0];
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-8 md:px-10 md:py-10">
@@ -35,21 +76,32 @@ function SettingsPage() {
 
       <div className="mt-8 space-y-4">
         <Row label="Dark Mode" desc="MangoGuard is optimised for dark environments.">
-          <Toggle value={dark} onChange={setDark} />
+          <Toggle
+            value={prefs.dark}
+            onChange={(v) => update("dark", v, v ? "Dark mode on" : "Dark mode off")}
+          />
         </Row>
         <Row label="Notifications" desc="Get notified when new disease alerts apply to your region.">
-          <Toggle value={notif} onChange={setNotif} />
+          <Toggle
+            value={prefs.notif}
+            onChange={(v) => update("notif", v, v ? "Notifications on" : "Notifications off")}
+          />
         </Row>
-        <Row label="Language" desc="Display language for the interface.">
+        <Row label="Language" desc={`Current: ${currentLang.label}. Display language for the interface.`}>
           <select
-            value={lang}
-            onChange={(e) => setLang(e.target.value)}
+            value={prefs.language}
+            onChange={(e) => {
+              const next = e.target.value;
+              const lang = LANGUAGES.find((l) => l.code === next) ?? LANGUAGES[0];
+              update("language", next, `Language set to ${lang.label}`);
+            }}
             className="rounded-lg border border-border bg-background/40 px-3 py-2 text-sm outline-none focus:border-primary/60"
           >
-            <option>English</option>
-            <option>हिन्दी</option>
-            <option>தமிழ்</option>
-            <option>తెలుగు</option>
+            {LANGUAGES.map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.label}
+              </option>
+            ))}
           </select>
         </Row>
         <Row label="Privacy" desc="Your scan history is stored locally on this device.">
@@ -61,7 +113,10 @@ function SettingsPage() {
         >
           <button
             onClick={() => {
-              if (confirm("Delete all detection history?")) clearHistory();
+              if (confirm("Delete all detection history?")) {
+                clearHistory();
+                toast.success("History cleared");
+              }
             }}
             className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20"
           >
