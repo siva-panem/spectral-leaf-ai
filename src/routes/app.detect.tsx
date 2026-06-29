@@ -12,11 +12,14 @@ import {
   Leaf,
   Lightbulb,
   RotateCw,
+  Download,
 } from "lucide-react";
 import { ScanAnimation } from "@/components/ScanAnimation";
 import { ConfidenceGauge } from "@/components/ConfidenceGauge";
 import { pickMockDetection, type Disease, type Severity } from "@/lib/diseases";
 import { addHistory } from "@/lib/history";
+import { downloadSingleReport } from "@/lib/pdf";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/detect")({
   ssr: false,
@@ -413,8 +416,32 @@ function ResultView({
           </ul>
           <div className="mt-5 flex flex-wrap gap-3">
             <button
-              onClick={onReset}
+              onClick={() => {
+                try {
+                  downloadSingleReport({
+                    id: crypto.randomUUID(),
+                    imageDataUrl: imageUrl,
+                    diseaseSlug: disease.slug,
+                    diseaseName: disease.name,
+                    confidence,
+                    severity,
+                    medicine: disease.medicine.name,
+                    status: isHealthy ? "Healthy" : "Pending",
+                    createdAt: Date.now(),
+                  });
+                  toast.success("Report downloaded");
+                } catch {
+                  toast.error("Could not generate PDF");
+                }
+              }}
               className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 glow-primary"
+            >
+              <Download className="h-4 w-4" />
+              Download Report
+            </button>
+            <button
+              onClick={onReset}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-white/[0.06]"
             >
               <RotateCw className="h-4 w-4" />
               Scan another leaf
