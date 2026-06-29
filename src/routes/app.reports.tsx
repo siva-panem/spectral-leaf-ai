@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { FileText, Download } from "lucide-react";
 import { listHistory, type PredictionRecord } from "@/lib/history";
+import { downloadSingleReport, downloadFullReport } from "@/lib/pdf";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/reports")({
   ssr: false,
@@ -14,24 +16,12 @@ function ReportsPage() {
   useEffect(() => setItems(listHistory()), []);
 
   const downloadAll = () => {
-    const html = `<!doctype html><html><head><title>MangoGuard Report</title>
-      <style>body{font-family:system-ui;padding:32px;color:#0a0a0a}h1{color:#00C853}
-      table{width:100%;border-collapse:collapse;margin-top:16px}td,th{padding:8px;border-bottom:1px solid #ddd;text-align:left;font-size:13px}</style>
-      </head><body>
-      <h1>MangoGuard AI — Full Report</h1>
-      <p>${items.length} predictions · generated ${new Date().toLocaleString()}</p>
-      <table><thead><tr><th>Date</th><th>Disease</th><th>Confidence</th><th>Severity</th><th>Medicine</th></tr></thead>
-      <tbody>${items
-        .map(
-          (r) =>
-            `<tr><td>${new Date(r.createdAt).toLocaleString()}</td><td>${r.diseaseName}</td><td>${r.confidence.toFixed(2)}%</td><td>${r.severity}</td><td>${r.medicine}</td></tr>`,
-        )
-        .join("")}</tbody></table>
-      <script>window.print()</script></body></html>`;
-    const w = window.open("", "_blank");
-    if (w) {
-      w.document.write(html);
-      w.document.close();
+    if (!items.length) return;
+    try {
+      downloadFullReport(items);
+      toast.success("Full report downloaded");
+    } catch {
+      toast.error("Could not generate PDF");
     }
   };
 

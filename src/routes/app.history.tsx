@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, Trash2, Download, ArrowDownAZ, ArrowUpAZ } from "lucide-react";
 import { listHistory, deleteHistory, type PredictionRecord } from "@/lib/history";
+import { downloadSingleReport } from "@/lib/pdf";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/history")({
   ssr: false,
@@ -35,24 +37,11 @@ function HistoryPage() {
   };
 
   const exportPdf = (rec: PredictionRecord) => {
-    const html = `<!doctype html><html><head><title>Report — ${rec.diseaseName}</title>
-      <style>body{font-family:system-ui;padding:40px;color:#0a0a0a;}h1{color:#00C853;}img{max-width:300px;border-radius:12px;}
-      .row{margin:8px 0;}.k{color:#666;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;}</style>
-      </head><body>
-      <h1>MangoGuard AI — Detection Report</h1>
-      <img src="${rec.imageDataUrl}" />
-      <div class="row"><div class="k">Disease</div><div><strong>${rec.diseaseName}</strong></div></div>
-      <div class="row"><div class="k">Confidence</div><div>${rec.confidence.toFixed(2)}%</div></div>
-      <div class="row"><div class="k">Severity</div><div>${rec.severity}</div></div>
-      <div class="row"><div class="k">Recommended Medicine</div><div>${rec.medicine}</div></div>
-      <div class="row"><div class="k">Date</div><div>${new Date(rec.createdAt).toLocaleString()}</div></div>
-      <p style="margin-top:24px;font-size:12px;color:#666">Doctor-style summary: ${rec.diseaseName === "Healthy" ? "Leaf is in optimal condition. Maintain current orchard practices." : "Treat with " + rec.medicine + " and monitor recovery weekly."}</p>
-      <script>window.print()</script>
-      </body></html>`;
-    const w = window.open("", "_blank");
-    if (w) {
-      w.document.write(html);
-      w.document.close();
+    try {
+      downloadSingleReport(rec);
+      toast.success("Report downloaded");
+    } catch {
+      toast.error("Could not generate PDF");
     }
   };
 
