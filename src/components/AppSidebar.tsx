@@ -10,18 +10,30 @@ import {
   HelpCircle,
   User,
   LogOut,
+  Shield,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
-import { signOut } from "@/lib/auth";
+import { signOut, getCurrentUser, isAdmin } from "@/lib/auth";
 
 type NavItem = {
-  to: "/app" | "/app/detect" | "/app/history" | "/app/library" | "/app/reports" | "/app/about" | "/app/settings" | "/app/help" | "/app/profile";
+  to:
+    | "/app"
+    | "/app/detect"
+    | "/app/history"
+    | "/app/library"
+    | "/app/reports"
+    | "/app/about"
+    | "/app/settings"
+    | "/app/help"
+    | "/app/profile"
+    | "/app/admin";
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   exact?: boolean;
 };
 
-const NAV: NavItem[] = [
+const BASE_NAV: NavItem[] = [
   { to: "/app", icon: LayoutDashboard, label: "Dashboard", exact: true },
   { to: "/app/detect", icon: ScanLine, label: "Detection" },
   { to: "/app/history", icon: History, label: "History" },
@@ -36,9 +48,21 @@ const NAV: NavItem[] = [
 export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
+  const [admin, setAdmin] = useState(false);
 
-  const handleLogout = () => {
-    signOut();
+  useEffect(() => {
+    (async () => {
+      const u = await getCurrentUser();
+      if (u) setAdmin(await isAdmin(u.id));
+    })();
+  }, []);
+
+  const NAV: NavItem[] = admin
+    ? [...BASE_NAV, { to: "/app/admin", icon: Shield, label: "Admin" }]
+    : BASE_NAV;
+
+  const handleLogout = async () => {
+    await signOut();
     navigate({ to: "/login" });
   };
 
@@ -47,7 +71,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="px-2 pt-2 pb-4">
         <Logo size={32} withText />
       </div>
-      <nav className="flex flex-1 flex-col gap-1">
+      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
         {NAV.map((item) => {
           const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
           const Icon = item.icon;

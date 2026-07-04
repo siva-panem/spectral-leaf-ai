@@ -20,6 +20,7 @@ import { Route as AppLibraryRouteImport } from './routes/app.library'
 import { Route as AppHistoryRouteImport } from './routes/app.history'
 import { Route as AppHelpRouteImport } from './routes/app.help'
 import { Route as AppDetectRouteImport } from './routes/app.detect'
+import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppAboutRouteImport } from './routes/app.about'
 import { Route as AppLibrarySlugRouteImport } from './routes/app.library.$slug'
 
@@ -78,6 +79,11 @@ const AppDetectRoute = AppDetectRouteImport.update({
   path: '/detect',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAboutRoute = AppAboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/app/about': typeof AppAboutRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/detect': typeof AppDetectRoute
   '/app/help': typeof AppHelpRoute
   '/app/history': typeof AppHistoryRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/app/about': typeof AppAboutRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/detect': typeof AppDetectRoute
   '/app/help': typeof AppHelpRoute
   '/app/history': typeof AppHistoryRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/app/about': typeof AppAboutRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/detect': typeof AppDetectRoute
   '/app/help': typeof AppHelpRoute
   '/app/history': typeof AppHistoryRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/app/about'
+    | '/app/admin'
     | '/app/detect'
     | '/app/help'
     | '/app/history'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/app/about'
+    | '/app/admin'
     | '/app/detect'
     | '/app/help'
     | '/app/history'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/app/about'
+    | '/app/admin'
     | '/app/detect'
     | '/app/help'
     | '/app/history'
@@ -266,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDetectRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/about': {
       id: '/app/about'
       path: '/about'
@@ -297,6 +316,7 @@ const AppLibraryRouteWithChildren = AppLibraryRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAboutRoute: typeof AppAboutRoute
+  AppAdminRoute: typeof AppAdminRoute
   AppDetectRoute: typeof AppDetectRoute
   AppHelpRoute: typeof AppHelpRoute
   AppHistoryRoute: typeof AppHistoryRoute
@@ -309,6 +329,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAboutRoute: AppAboutRoute,
+  AppAdminRoute: AppAdminRoute,
   AppDetectRoute: AppDetectRoute,
   AppHelpRoute: AppHelpRoute,
   AppHistoryRoute: AppHistoryRoute,
@@ -329,13 +350,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
