@@ -57,8 +57,8 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     })();
   }, []);
 
-  const NAV = admin
-    ? [...BASE_NAV, { to: "/app/admin" as const, icon: Shield, label: "Admin" }]
+  const NAV: NavItem[] = admin
+    ? [...BASE_NAV, { to: "/app/admin", icon: Shield, label: "Admin" }]
     : BASE_NAV;
 
   const handleLogout = async () => {
