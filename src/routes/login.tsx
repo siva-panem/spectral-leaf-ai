@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Eye, EyeOff, Mail, Lock, User as UserIcon, ArrowLeft } from "lucide-react";
+import { Mail, ArrowLeft, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
 import { ParticlesBg } from "@/components/ParticlesBg";
@@ -13,87 +13,69 @@ export const Route = createFileRoute("/login")({
   component: Login,
 });
 
-type Mode = "signin" | "signup" | "verify";
+type Mode = "email" | "verify";
 
 function Login() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<Mode>("signin");
+  const [mode, setMode] = useState<Mode>("email");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [otp, setOtp] = useState("");
-  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const goToApp = () => navigate({ to: "/app" });
 
-  const onSignIn = async (e: React.FormEvent) => {
+  const onSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      if (error.message.toLowerCase().includes("email not confirmed")) {
-        toast.error("Please verify your email first. We're sending a new code.");
-        await supabase.auth.resend({ type: "signup", email });
-        setMode("verify");
-        return;
-      }
-      toast.error(error.message || "Invalid email or password");
-      return;
-    }
-    toast.success("Welcome back!");
-    goToApp();
-  };
-
-  const onSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (!email) {
+      toast.error("Enter your email");
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signInWithOtp({
       email,
-      password,
       options: {
+        shouldCreateUser: true,
         emailRedirectTo: window.location.origin,
-        data: { full_name: name },
+        data: name ? { full_name: name } : undefined,
       },
     });
     setLoading(false);
     if (error) {
-      toast.error(error.message || "Could not create account");
+      toast.error(error.message || "Could not send code");
       return;
     }
-    toast.success("Verification code sent to your email");
+    toast.success("6-digit code sent to your email");
     setMode("verify");
   };
 
   const onVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     if (otp.length !== 6) {
-      toast.error("Enter the 6-digit code from your email");
+      toast.error("Enter the 6-digit code");
       return;
     }
     setLoading(true);
     const { error } = await supabase.auth.verifyOtp({
       email,
       token: otp,
-      type: "signup",
+      type: "email",
     });
     setLoading(false);
     if (error) {
-      toast.error(error.message || "Invalid code");
+      toast.error(error.message || "Invalid or expired code");
       return;
     }
-    toast.success("Email verified — you're in!");
+    toast.success("You're in!");
     goToApp();
   };
 
-  const onResendCode = async () => {
+  const onResend = async () => {
     setLoading(true);
-    const { error } = await supabase.auth.resend({ type: "signup", email });
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
     setLoading(false);
     if (error) toast.error(error.message);
     else toast.success("New code sent");
@@ -141,59 +123,20 @@ function Login() {
         <div className="flex flex-col items-center text-center">
           <Logo size={48} />
           <h1 className="mt-5 font-display text-2xl font-semibold tracking-tight">
-            {mode === "signin" && "Welcome back"}
-            {mode === "signup" && "Create your account"}
-            {mode === "verify" && "Verify your email"}
+            {mode === "email" ? "Sign in with a code" : "Enter your code"}
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            {mode === "signin" && "Sign in to continue protecting your orchard"}
-            {mode === "signup" && "Start detecting mango diseases in seconds"}
-            {mode === "verify" && (
+            {mode === "email" ? (
+              "We'll email you a 6-digit code — no password needed"
+            ) : (
               <>
-                Enter the 6-digit code sent to <span className="text-foreground">{email}</span>
+                Code sent to <span className="text-foreground">{email}</span>
               </>
             )}
           </p>
         </div>
 
-        {mode === "verify" ? (
-          <form onSubmit={onVerify} className="mt-7 flex flex-col gap-4">
-            <input
-              autoFocus
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={6}
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-              placeholder="••••••"
-              className="w-full rounded-xl border border-border bg-background/40 py-4 text-center text-2xl font-semibold tracking-[0.5em] outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-60 glow-primary"
-            >
-              {loading ? "Verifying…" : "Verify & continue"}
-            </button>
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <button
-                type="button"
-                onClick={() => setMode("signup")}
-                className="flex items-center gap-1 hover:text-foreground"
-              >
-                <ArrowLeft className="h-3 w-3" /> Change email
-              </button>
-              <button
-                type="button"
-                onClick={onResendCode}
-                disabled={loading}
-                className="text-primary hover:underline"
-              >
-                Resend code
-              </button>
-            </div>
-          </form>
-        ) : (
+        {mode === "email" ? (
           <>
             <button
               onClick={onGoogle}
@@ -217,22 +160,22 @@ function Login() {
               <span className="h-px flex-1 bg-border" />
             </div>
 
-            <form onSubmit={mode === "signin" ? onSignIn : onSignUp} className="flex flex-col gap-4">
-              {mode === "signup" && (
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">Name</label>
-                  <div className="relative mt-1.5">
-                    <UserIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Your name"
-                      className={inputBase}
-                    />
-                  </div>
+            <form onSubmit={onSendCode} className="flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Name <span className="opacity-60">(optional, first time only)</span>
+                </label>
+                <div className="relative mt-1.5">
+                  <UserIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    className={inputBase}
+                  />
                 </div>
-              )}
+              </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Email</label>
                 <div className="relative mt-1.5">
@@ -247,53 +190,56 @@ function Login() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Password</label>
-                <div className="relative mt-1.5">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type={showPw ? "text" : "password"}
-                    required
-                    minLength={6}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className={inputBase + " pr-10"}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPw((s) => !s)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label="Toggle password visibility"
-                  >
-                    {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
 
               <button
                 type="submit"
                 disabled={loading}
                 className="mt-2 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-60 glow-primary"
               >
-                {loading
-                  ? "Please wait…"
-                  : mode === "signin"
-                    ? "Sign in"
-                    : "Create account"}
+                {loading ? "Sending code…" : "Send 6-digit code"}
               </button>
             </form>
-
-            <p className="mt-6 text-center text-xs text-muted-foreground">
-              {mode === "signin" ? "Don't have an account?" : "Already have an account?"}{" "}
-              <button
-                onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-                className="font-medium text-primary hover:underline"
-              >
-                {mode === "signin" ? "Create one" : "Sign in"}
-              </button>
-            </p>
           </>
+        ) : (
+          <form onSubmit={onVerify} className="mt-7 flex flex-col gap-4">
+            <input
+              autoFocus
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+              placeholder="••••••"
+              className="w-full rounded-xl border border-border bg-background/40 py-4 text-center text-2xl font-semibold tracking-[0.5em] outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-60 glow-primary"
+            >
+              {loading ? "Verifying…" : "Verify & continue"}
+            </button>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <button
+                type="button"
+                onClick={() => {
+                  setOtp("");
+                  setMode("email");
+                }}
+                className="flex items-center gap-1 hover:text-foreground"
+              >
+                <ArrowLeft className="h-3 w-3" /> Change email
+              </button>
+              <button
+                type="button"
+                onClick={onResend}
+                disabled={loading}
+                className="text-primary hover:underline"
+              >
+                Resend code
+              </button>
+            </div>
+          </form>
         )}
       </motion.div>
     </div>
